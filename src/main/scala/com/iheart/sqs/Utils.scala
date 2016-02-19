@@ -69,16 +69,10 @@ object Utils  {
     * Reads a file from S3, parses it and returns
     * a sequence of Option[LogEntry]
   **********************************************/
-  def iteratorToLogEntry(iterator: Iterator[String], l: Seq[Option[LogEntry]] = Seq() ): Seq[Option[LogEntry]] = iterator.hasNext match {
-    case true => iteratorToLogEntry(iterator.drop(1), l :+ parseRecord(iterator.take(1).toString()))
-    case _ => l
-  }
-
   def parseLogFile(bucket: String, key: String): S3TupleBase = {
     try {
       readFileFromS3(bucket,key) match {
-        case Right((iterator,handle)) =>
-          S3Tuple(iterator.map(parseRecord),handle)
+        case Right((iterator,handle)) => S3Tuple(iterator.map(parseRecord),handle)
         case Left(y) => S3EmptyTuple()
       }
     } catch {
