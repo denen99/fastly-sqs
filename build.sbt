@@ -6,7 +6,7 @@ ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 lazy val root = (project in file(".")).
   settings(
     name := "fastly-sqs",
-    version := "1.0.7",
+    version := "1.2.0",
     scalaVersion := "2.11.7",
     retrieveManaged := true,
     libraryDependencies += "com.amazonaws" % "aws-java-sdk-s3" % "1.10.50",

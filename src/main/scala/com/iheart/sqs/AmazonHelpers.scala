@@ -3,10 +3,12 @@ package com.iheart.sqs
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
+
+import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.services.logs.AWSLogsClient
 import com.amazonaws.services.logs.model._
 import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model.{S3Object, GetObjectRequest}
+import com.amazonaws.services.s3.model.{GetObjectRequest, S3Object}
 import com.amazonaws.services.sqs.{AmazonSQSAsyncClient, AmazonSQSClient}
 import com.amazonaws.services.sqs.buffered.AmazonSQSBufferedAsyncClient
 import com.amazonaws.services.sqs.model._
@@ -15,17 +17,19 @@ import com.iheart.sqs.Utils._
 import org.apache.http.conn.ConnectionPoolTimeoutException
 import play.Logger
 import play.api.libs.json._
+import scala.util.Success
+import scala.util.Failure
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
-import scala.util.Random
+import scala.util.{Random, Try}
 
 
 object AmazonHelpers {
 
   val s3Client = new AmazonS3Client()
   val cwlClient = new AWSLogsClient()
-  val sqsAsync = new AmazonSQSAsyncClient();
+  val sqsAsync = new AmazonSQSAsyncClient()
   val sqsclient = new AmazonSQSBufferedAsyncClient(sqsAsync)
   val cwlLogGroup = conf.getString("sqs.logGroup")
   val sqsQueueUrl = conf.getString("sqs.url")
@@ -36,18 +40,24 @@ object AmazonHelpers {
     s.format(new Date())
   }
 
+  private def getS3Object(bucket: String, key: String): Try[S3Object] =
+    Try(s3Client.getObject(new GetObjectRequest(bucket, key)))
+
   def readFileFromS3(bucket: String, key: String): Either[Throwable,(Iterator[String],S3Object)] = {
     Logger.debug("About to read from bucket : " + bucket + " and key " + key)
+    val s3Object = s3Client.getObject(new GetObjectRequest(bucket, key))
+
     try {
-      val s3Object = s3Client.getObject(new GetObjectRequest(bucket, key))
       val iterator = Source.fromInputStream(s3Object.getObjectContent)(scala.io.Codec.ISO8859).getLines()
       Right((iterator,s3Object))
     } catch {
       case e: ConnectionPoolTimeoutException =>
         Logger.error("Error retrieving from connection pool, possibly threadPool issue?")
+        s3Object.close()
         Left(e)
       case e: Throwable =>
         Logger.error("Error retrieving from S3 : " + e.getMessage)
+        s3Object.close()
         Left(e)
     }
   }
