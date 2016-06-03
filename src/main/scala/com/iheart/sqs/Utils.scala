@@ -98,6 +98,7 @@ object Utils  {
   def formatValue(key: String, value: Any): Map[String,Any] = key match {
     case "timestamp" => Map(key -> parseDate(value.asInstanceOf[String]))
     case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
+    case "tcpClientRTT" if value != "" => Map(key -> value.toString.toInt)
     case _ => Map(key -> value)
   }
 
@@ -106,7 +107,7 @@ object Utils  {
   * so we ensure its there
   ******************************************************/
   def ensureEventType(m: Map[String,Any]) = m.get("eventType") match {
-    case None => Map("eventType" -> conf.getString("event-types.defualt"))
+    case None => Map("eventType" -> conf.getString("event-types.default"))
     case _ => Map()
   }
 
