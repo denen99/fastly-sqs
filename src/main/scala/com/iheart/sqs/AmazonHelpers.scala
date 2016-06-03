@@ -36,12 +36,14 @@ object AmazonHelpers {
     s.format(new Date())
   }
 
-  def readFileFromS3(bucket: String, key: String): Either[Throwable,(Iterator[String],S3Object)] = {
+  def readFileFromS3(bucket: String, key: String): Either[Throwable, List[String]] = {
     Logger.debug("About to read from bucket : " + bucket + " and key " + key)
+    var source: Source = null
     try {
       val s3Object = s3Client.getObject(new GetObjectRequest(bucket, key))
-      val iterator = Source.fromInputStream(s3Object.getObjectContent)(scala.io.Codec.ISO8859).getLines()
-      Right((iterator,s3Object))
+      source = Source.fromInputStream(s3Object.getObjectContent)(scala.io.Codec.ISO8859)
+      val lines = source.getLines().toList
+      Right(lines)
     } catch {
       case e: ConnectionPoolTimeoutException =>
         Logger.error("Error retrieving from connection pool, possibly threadPool issue?")
@@ -49,6 +51,8 @@ object AmazonHelpers {
       case e: Throwable =>
         Logger.error("Error retrieving from S3 : " + e.getMessage)
         Left(e)
+    } finally {
+      if (source != null) source.close()
     }
   }
 
