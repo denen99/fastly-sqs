@@ -12,7 +12,8 @@ class LambdaSpec extends Specification {
   "Lambda Application" should {
 
     "correctly parse a valid log entry" in {
-      val record = "<134>2016-01-08T18:35:59Z cache-atl6234 AmazonS3[168183]: 1.2.3.4 Fri, 08 Jan 2016 18:35:59 GMT GET /path/hello.txt www.domain.com 200 HIT, MISS (null)"
+      val record = "<134>2016-01-08T18:35:59Z cache-atl6234 AmazonS3[168183]: 1.2.3.4 Fri, 08 Jan 2016 18:35:59 GMT GET /path/hello.txt www.domain.com 200 HIT, MISS (null) 25000"
+
       val result = parseRecord(record)
       result mustNotEqual None
       result.get.fields("hostname") mustEqual "www.domain.com"
@@ -26,6 +27,25 @@ class LambdaSpec extends Specification {
       result.get.fields("timestamp") mustEqual 1452278159
       result.get.fields("fastlyHost") mustEqual "cache-atl6234"
       result.get.fields("referrer") mustEqual "(null)"
+      result.get.fields("tcpClientRTT") mustEqual 25000
+    }
+
+    "correctly parse a valid log entry with multiple shield entries" in {
+      val record ="<134>2016-02-22T00:00:09Z cache-ord1732 AmazonS3[351]: 205.160.165.83 Mon, 22 Feb 2016 00:00:08 GMT GET /api/v2/query/ipad.sliderwide radioedit.iheart.com 200 MISS, MISS, HIT (null) 25000"
+      val result = parseRecord(record)
+      result mustNotEqual None
+      result.get.fields("hostname") mustEqual "radioedit.iheart.com"
+      result.get.fields("hitMissShield") mustEqual "MISS"
+      result.get.fields("hitMissEdge") mustEqual "MISS"
+      result.get.fields("httpMethod") mustEqual "GET"
+      result.get.fields("eventType") mustEqual "FastlyDebug"
+      result.get.fields("ip") mustEqual "205.160.165.83"
+      result.get.fields("statusCode") mustEqual "200"
+      result.get.fields("uri") mustEqual "/api/v2/query/ipad.sliderwide"
+      result.get.fields("timestamp") mustEqual 1456099208
+      result.get.fields("fastlyHost") mustEqual "cache-ord1732"
+      result.get.fields("referrer") mustEqual "(null)"
+      result.get.fields("tcpClientRTT") mustEqual 25000
     }
 
     "correctly parse all formats of HIT/MISS" in {

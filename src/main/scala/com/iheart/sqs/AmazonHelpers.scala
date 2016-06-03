@@ -105,21 +105,21 @@ object AmazonHelpers {
 
   def getSqsMessages(implicit ec: ExecutionContext = executionContext) = {
     while (true) {
-        val request = new ReceiveMessageRequest(sqsQueueUrl).withVisibilityTimeout(30).withMaxNumberOfMessages(10).withWaitTimeSeconds(10)
-        val messages = sqsclient.receiveMessage(request).getMessages
-        Logger.debug("Received " + messages.size() + " messages")
+      val request = new ReceiveMessageRequest(sqsQueueUrl).withVisibilityTimeout(30).withMaxNumberOfMessages(10).withWaitTimeSeconds(10)
+      val messages = sqsclient.receiveMessage(request).getMessages
+      Logger.debug("Received " + messages.size() + " messages")
 
-        messages.asScala.foreach { message =>
-          val body = message.getBody
-          parseMessage(body).map { record =>
-            val bucket = record._1
-            val key = URLDecoder.decode(record._2, "UTF-8")
-            Logger.debug("Sending bucket : " + bucket + " and key:" + key + ":")
-            Future { sendToNewRelic(parseLogFile(bucket, key)) }
-          }
+      messages.asScala.foreach { message =>
+        val body = message.getBody
+        parseMessage(body).map { record =>
+          val bucket = record._1
+          val key = URLDecoder.decode(record._2, "UTF-8")
+          Logger.debug("Sending bucket : " + bucket + " and key:" + key + ":")
+          Future { sendToNewRelic(parseLogFile(bucket, key)) }
         }
+      }
 
-       deleteBatch(messages.asScala)
+      deleteBatch(messages.asScala)
 
     }
   }
