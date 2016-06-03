@@ -14,11 +14,6 @@ import scala.concurrent.ExecutionContext
 
 case class LogEntry(fields: Map[String,Any])
 
-abstract class S3TupleBase(val iterator: Iterator[Option[LogEntry]], val handle: S3Object)
-
-case class S3Tuple(val i: Iterator[Option[LogEntry]], val h: S3Object) extends S3TupleBase(i,h)
-case class S3EmptyTuple() extends S3TupleBase(Iterator(), new S3Object)
-
 object Utils  {
 
   import com.iheart.sqs.AmazonHelpers._
@@ -69,16 +64,16 @@ object Utils  {
     * Reads a file from S3, parses it and returns
     * a sequence of Option[LogEntry]
   **********************************************/
-  def parseLogFile(bucket: String, key: String): S3TupleBase = {
+  def parseLogFile(bucket: String, key: String): List[LogEntry] = {
     try {
       readFileFromS3(bucket,key) match {
-        case Right((iterator,handle)) => S3Tuple(iterator.map(parseRecord),handle)
-        case Left(y) => S3EmptyTuple()
+        case Right(lines) => lines.flatMap(parseRecord)
+        case Left(y) => Nil
       }
     } catch {
       case e: Throwable =>
         Logger.debug("Unable to parse Logfile " + e.getMessage)
-        S3EmptyTuple()
+        Nil
     }
 
   }
