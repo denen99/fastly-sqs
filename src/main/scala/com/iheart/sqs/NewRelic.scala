@@ -20,7 +20,7 @@ object NewRelic {
     * splitCount splits up the JSON posts so we
     * stay below the 5MB NewRelic limit
     **********************************************/
-  def postJson(entries: Iterator[LogEntry]) = {
+  def postJson(entries: List[LogEntry]) = {
     val json = entries.toSeq.asJ
     wsClient.url(insightUrl)
       .withHeaders(("X-Insert-Key", insightApiKey), ("Content-Type", "application/json"))
@@ -28,26 +28,22 @@ object NewRelic {
       .post(json)
   }
 
-  def sendToNewRelicChunk(entries: Iterator[LogEntry], splitCount: Int ): Unit = entries.hasNext match {
+  def sendToNewRelicChunk(entries: List[LogEntry], splitCount: Int): Unit = entries.nonEmpty match {
     case true =>
       Logger.debug("Sending chunk to NewRelic")
       postJson(entries.take(splitCount))
-      sendToNewRelicChunk(entries.drop(splitCount),splitCount)
+      sendToNewRelicChunk(entries.drop(splitCount), splitCount)
     case _ =>
       Logger.debug("Done with NewRelic Chunks")
   }
 
-  def sendToNewRelic(s3Helper: S3TupleBase, splitCount: Int = 2000) = {
-
-    val validEntries = s3Helper.iterator.flatMap(y => y)
-
-    validEntries.isEmpty match {
+  def sendToNewRelic(entries: List[LogEntry], splitCount: Int = 2000) = {
+    entries.isEmpty match {
       case true =>
         Logger.debug("Skipping NewRelic, no valid entries")
       case _ =>
-        sendToNewRelicChunk(validEntries,splitCount)
+        sendToNewRelicChunk(entries, splitCount)
         Logger.debug("Closing S3 handle")
-        s3Helper.handle.close()
     }
 
   }

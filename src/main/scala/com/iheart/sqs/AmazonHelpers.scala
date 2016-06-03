@@ -3,13 +3,10 @@ package com.iheart.sqs
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
-
-import com.amazonaws.ClientConfiguration
-import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.services.logs.AWSLogsClient
 import com.amazonaws.services.logs.model._
 import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model.{GetObjectRequest, S3Object}
+import com.amazonaws.services.s3.model.{S3Object, GetObjectRequest}
 import com.amazonaws.services.sqs.{AmazonSQSAsyncClient, AmazonSQSClient}
 import com.amazonaws.services.sqs.buffered.AmazonSQSBufferedAsyncClient
 import com.amazonaws.services.sqs.model._
@@ -18,22 +15,17 @@ import com.iheart.sqs.Utils._
 import org.apache.http.conn.ConnectionPoolTimeoutException
 import play.Logger
 import play.api.libs.json._
-
-import scala.util.Success
-import scala.util.Failure
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
-import scala.util.{Random, Try}
+import scala.util.Random
 
 
 object AmazonHelpers {
 
-  val clientConfig = new ClientConfiguration()
-  clientConfig.setMaxConnections(1000)
-  val s3Client = new AmazonS3Client(clientConfig)
+  val s3Client = new AmazonS3Client()
   val cwlClient = new AWSLogsClient()
-  val sqsAsync = new AmazonSQSAsyncClient(clientConfig)
+  val sqsAsync = new AmazonSQSAsyncClient();
   val sqsclient = new AmazonSQSBufferedAsyncClient(sqsAsync)
   val cwlLogGroup = conf.getString("sqs.logGroup")
   val sqsQueueUrl = conf.getString("sqs.url")
@@ -44,17 +36,14 @@ object AmazonHelpers {
     s.format(new Date())
   }
 
-  private def getS3Object(bucket: String, key: String): Try[S3Object] =
-    Try(s3Client.getObject(new GetObjectRequest(bucket, key)))
-
-  def readFileFromS3(bucket: String, key: String): Either[Throwable,(Iterator[String],S3Object)] = {
+  def readFileFromS3(bucket: String, key: String): Either[Throwable, List[String]] = {
     Logger.debug("About to read from bucket : " + bucket + " and key " + key)
-
+    var source: Source = null
     try {
       val s3Object = s3Client.getObject(new GetObjectRequest(bucket, key))
-      val iterator = Source.fromInputStream(s3Object.getObjectContent)(scala.io.Codec.ISO8859).getLines()
-      iter
-      Right((iterator,s3Object))
+      source = Source.fromInputStream(s3Object.getObjectContent)(scala.io.Codec.ISO8859)
+      val lines = source.getLines().toList
+      Right(lines)
     } catch {
       case e: ConnectionPoolTimeoutException =>
         Logger.error("Error retrieving from connection pool, possibly threadPool issue?")
@@ -62,6 +51,8 @@ object AmazonHelpers {
       case e: Throwable =>
         Logger.error("Error retrieving from S3 : " + e.getMessage)
         Left(e)
+    } finally {
+      if (source != null) source.close()
     }
   }
 
@@ -114,21 +105,21 @@ object AmazonHelpers {
 
   def getSqsMessages(implicit ec: ExecutionContext = executionContext) = {
     while (true) {
-        val request = new ReceiveMessageRequest(sqsQueueUrl).withVisibilityTimeout(30).withMaxNumberOfMessages(10).withWaitTimeSeconds(10)
-        val messages = sqsclient.receiveMessage(request).getMessages
-        Logger.debug("Received " + messages.size() + " messages")
+      val request = new ReceiveMessageRequest(sqsQueueUrl).withVisibilityTimeout(30).withMaxNumberOfMessages(10).withWaitTimeSeconds(10)
+      val messages = sqsclient.receiveMessage(request).getMessages
+      Logger.debug("Received " + messages.size() + " messages")
 
-        messages.asScala.foreach { message =>
-          val body = message.getBody
-          parseMessage(body).map { record =>
-            val bucket = record._1
-            val key = URLDecoder.decode(record._2, "UTF-8")
-            Logger.debug("Sending bucket : " + bucket + " and key:" + key + ":")
-            Future { sendToNewRelic(parseLogFile(bucket, key)) }
-          }
+      messages.asScala.foreach { message =>
+        val body = message.getBody
+        parseMessage(body).map { record =>
+          val bucket = record._1
+          val key = URLDecoder.decode(record._2, "UTF-8")
+          Logger.debug("Sending bucket : " + bucket + " and key:" + key + ":")
+          Future { sendToNewRelic(parseLogFile(bucket, key)) }
         }
+      }
 
-       deleteBatch(messages.asScala)
+      deleteBatch(messages.asScala)
 
     }
   }
