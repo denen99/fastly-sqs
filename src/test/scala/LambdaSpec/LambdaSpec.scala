@@ -81,6 +81,14 @@ class LambdaSpec extends Specification {
 
     }
 
+    //-------------------------------------------------------------
+    // test.example.com is a specific host config (look at application.test.conf)
+    // If you want to test any new fields, trying via a
+    // custom hostname is the cleanest way to do it.  Below
+    // we introduced a new custom field tcpClientRTT and ensure
+    // it is being used from the config and is resolving to the
+    // right value for the domain test.example.com
+    //--------------------------------------------------------------
     "correctly parse a valid log entry using a specific host config" in {
 
       val host = "test.example.com"

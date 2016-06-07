@@ -51,16 +51,12 @@ object Utils  {
 
     patternMap.get(host) match {
       case Some(x) =>
-        println("Found pattern , just returning " + x + " for host " + host)
         x
       case None =>
         val key = "regex.hosts." + s""""${host}"""" + ".pattern"
-        println("Using key " + key)
         val patternStr = conf.as[Option[String]](key).getOrElse(conf.getString("regex.default.pattern"))
-        println("Using pattern str " + patternStr + " for host " + host)
         val pattern = Pattern.compile(patternStr)
         patternMap += host -> pattern
-        println("Pattern map is now " + patternMap)
         pattern
     }
 
@@ -73,7 +69,6 @@ object Utils  {
 
     confMap.get(key) match {
       case Some(x) =>
-        println("Found conf " + x + " for host " + host)
         Some(x)
       case _ =>
         val cfg: LogConfig = conf.as[Option[LogConfig]](confKey).getOrElse(conf.as[LogConfig]("regex.default"))
