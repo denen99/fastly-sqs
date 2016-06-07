@@ -50,11 +50,17 @@ object Utils  {
   def getOrSetPattern(host: String) = {
 
     patternMap.get(host) match {
-      case Some(x) => x
+      case Some(x) =>
+        println("Found pattern , just returning " + x + " for host " + host)
+        x
       case None =>
-        val patternStr = conf.as[Option[String]]("regex.hosts." + host + ".pattern").getOrElse(conf.getString("regex.default.pattern"))
+        val key = "regex.hosts." + s""""${host}"""" + ".pattern"
+        println("Using key " + key)
+        val patternStr = conf.as[Option[String]](key).getOrElse(conf.getString("regex.default.pattern"))
+        println("Using pattern str " + patternStr + " for host " + host)
         val pattern = Pattern.compile(patternStr)
         patternMap += host -> pattern
+        println("Pattern map is now " + patternMap)
         pattern
     }
 
@@ -62,23 +68,28 @@ object Utils  {
 
   def getOrSetConf(host: String, idx: String): Option[String] = {
 
-    confMap.get(host + idx) match {
+    val confKey = "regex.hosts." + s""""${host}""""
+    val key = host + idx
+
+    confMap.get(key) match {
       case Some(x) =>
+        println("Found conf " + x + " for host " + host)
         Some(x)
       case _ =>
-        val cfg: LogConfig = conf.as[Option[LogConfig]]("regex.hosts." + host).getOrElse(conf.as[LogConfig]("regex.default"))
+        val cfg: LogConfig = conf.as[Option[LogConfig]](confKey).getOrElse(conf.as[LogConfig]("regex.default"))
         if (cfg.captures.get(idx).isDefined) {
-          confMap += host + idx -> cfg.captures(idx)
-          Some(confMap(host + idx))
+          confMap +=  key -> cfg.captures(idx)
+          Some(confMap(key))
         } else None
     }
   }
 
   def getOrSetDateFormat(host: String) = {
+    val confKey = "regex.hosts." + s""""${host}"""" + ".dateformat"
     dateMap.get(host) match {
       case Some(x) => x
       case None =>
-        val date = conf.as[Option[String]]("regex.hosts." + host + ".dateformat").getOrElse(conf.getString("regex.default.dateformat"))
+        val date = conf.as[Option[String]](confKey).getOrElse(conf.getString("regex.default.dateformat"))
         dateMap += host -> date
         date
     }
