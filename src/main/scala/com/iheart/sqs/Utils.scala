@@ -34,8 +34,6 @@ object Utils  {
   type EmptyResponse = String
 
   val conf = ConfigFactory.load()
-//  val regex = conf.getString("regex.pattern")
-//  val pattern = Pattern.compile(regex)
   val insightApiKey = conf.getString("newrelic.apikey")
   val insightUrl = conf.getString("newrelic.apiUrl")
   val executorService = Executors.newFixedThreadPool(4)
@@ -50,8 +48,7 @@ object Utils  {
   def getOrSetPattern(host: String) = {
 
     patternMap.get(host) match {
-      case Some(x) =>
-        x
+      case Some(x) => x
       case None =>
         val key = "regex.hosts." + s""""${host}"""" + ".pattern"
         val patternStr = conf.as[Option[String]](key).getOrElse(conf.getString("regex.default.pattern"))
@@ -74,7 +71,7 @@ object Utils  {
         val cfg: LogConfig = conf.as[Option[LogConfig]](confKey).getOrElse(conf.as[LogConfig]("regex.default"))
         if (cfg.captures.get(idx).isDefined) {
           confMap +=  key -> cfg.captures(idx)
-          Some(confMap(key))
+          Some(cfg.captures(idx))
         } else None
     }
   }
