@@ -2,6 +2,8 @@
 
 ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 
+resolvers += Resolver.jcenterRepo
+
 val awsVersion = "1.10.50"
 
 def awsSdkModule(id: String) = "com.amazonaws" % s"aws-java-sdk-$id" % awsVersion
@@ -19,7 +21,8 @@ lazy val root = (project in file(".")).
       "org.json4s" %% "json4s-jackson" % "3.3.0",
       "com.typesafe.play" %% "play-ws" % "2.4.4",
       "com.typesafe" % "config" % "1.3.0",
-      "org.specs2" %% "specs2-core" % "3.7" % "test"
+      "org.specs2" %% "specs2-core" % "3.7" % "test",
+      "com.iheart" %% "ficus" % "1.2.3"
     ) ++ Seq("s3", "logs", "sqs").map(awsSdkModule)
   )
 
