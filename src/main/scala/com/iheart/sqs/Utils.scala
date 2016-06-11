@@ -43,7 +43,7 @@ object Utils  {
   val patternMap: Map[String, Pattern] = buildPatternMap().withDefaultValue(defaultPattern)
 
   def buildConfMap(): ConfMap =
-    conf.as[Map[String, LogConfig]]("regex.hosts").withDefaultValue(default)
+    conf.as[ConfMap]("regex.hosts").withDefaultValue(default)
 
   def buildPatternMap(): PatternMap = {
 
