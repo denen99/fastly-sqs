@@ -3,7 +3,6 @@ package com.iheart.sqs
 import java.text.SimpleDateFormat
 import java.util.concurrent.Executors
 import java.util.regex.{Matcher, Pattern}
-import com.amazonaws.services.s3.model.S3Object
 import org.json4s.{FieldSerializer, DefaultFormats}
 import org.json4s.native.Serialization.write
 import com.typesafe.config._
@@ -18,11 +17,10 @@ case class LogConfig(pattern: String, captures: Map[String,String], dateformat: 
 
 object Utils  {
 
-  import com.iheart.sqs.AmazonHelpers._
+  type PatternMap = Map[String,Pattern]
+  type ConfMap = Map[String,LogConfig]
 
-  private var confMap: Map[String,String] = Map()
-  private var patternMap: Map[String, Pattern] = Map()
-  private var dateMap: Map[String, String] = Map()
+  import com.iheart.sqs.AmazonHelpers._
 
   //implicit Class to convert case class to JSON
   implicit class logEntryToJson(l: Seq[LogEntry]) {
@@ -39,52 +37,22 @@ object Utils  {
   val executorService = Executors.newFixedThreadPool(4)
   val executionContext = ExecutionContext.fromExecutorService(executorService)
 
+  val default: LogConfig = conf.as[LogConfig]("regex.default")
+  val defaultPattern = Pattern.compile(default.pattern)
+  val confMap: ConfMap = buildConfMap()
+  val patternMap: Map[String, Pattern] = buildPatternMap().withDefaultValue(defaultPattern)
 
-  /*********************************************
-    *  Used to memoize fetching of the regex fields
-    *  from the configuration to minimize config loads
-    *  on every record
-    *******************************************/
-  def getOrSetPattern(host: String) = {
+  def buildConfMap(): ConfMap =
+    conf.as[Map[String, LogConfig]]("regex.hosts").withDefaultValue(default)
 
-    patternMap.get(host) match {
-      case Some(x) => x
-      case None =>
-        val key = "regex.hosts." + s""""${host}"""" + ".pattern"
-        val patternStr = conf.as[Option[String]](key).getOrElse(conf.getString("regex.default.pattern"))
-        val pattern = Pattern.compile(patternStr)
-        patternMap += host -> pattern
-        pattern
+  def buildPatternMap(): PatternMap = {
+
+    def buildPatternMapRec(keys: List[String], m: PatternMap = Map()): PatternMap = keys match {
+      case h :: t => buildPatternMapRec(t, m + (h -> Pattern.compile(confMap(h).pattern)))
+      case Nil => m
     }
 
-  }
-
-  def getOrSetConf(host: String, idx: String): Option[String] = {
-
-    val confKey = "regex.hosts." + s""""${host}""""
-    val key = host + idx
-
-    confMap.get(key) match {
-      case Some(x) =>
-        Some(x)
-      case _ =>
-        val cfg: LogConfig = conf.as[Option[LogConfig]](confKey).getOrElse(conf.as[LogConfig]("regex.default"))
-        if (cfg.captures.get(idx).isDefined) {
-          confMap +=  key -> cfg.captures(idx)
-          Some(cfg.captures(idx))
-        } else None
-    }
-  }
-
-  def getOrSetDateFormat(host: String) = {
-    val confKey = "regex.hosts." + s""""${host}"""" + ".dateformat"
-    dateMap.get(host) match {
-      case Some(x) => x
-      case None =>
-        val date = conf.as[Option[String]](confKey).getOrElse(conf.getString("regex.default.dateformat"))
-        dateMap += host -> date
-        date
-    }
+    buildPatternMapRec(confMap.keys.toList)
   }
 
   def getHostFromKey(key: String) = {
@@ -128,7 +96,7 @@ object Utils  {
     * to EPOCH format
     **********************************************/
   def parseDate(date: String, host: String): Long = {
-    val fmt = new SimpleDateFormat(getOrSetDateFormat(host))
+    val fmt = new SimpleDateFormat(confMap(host).dateformat)
     val res = fmt.parse(date)
     res.getTime / 1000
   }
@@ -164,7 +132,7 @@ object Utils  {
 
   def buildMap(matcher: Matcher,count: Int, host: String, m: Map[String,Any] = Map()): Map[String,Any] = count match {
     case 0 => m ++ ensureEventType(m)
-    case _ => val key = getOrSetConf(host,count.toString)
+    case _ => val key = confMap(host).captures.get(count.toString)
       key match {
         case Some(x) =>
           buildMap(matcher,count-1, host, m ++ formatValue(x,matcher.group(count),host))
@@ -179,7 +147,7 @@ object Utils  {
     ************************************************************/
   def parseRecord(line: String, host: String): Option[LogEntry] = {
 
-    val pattern = getOrSetPattern(host)
+    val pattern = patternMap(host)
     val matcher = pattern.matcher(line)
 
     if (matcher.find()) {
