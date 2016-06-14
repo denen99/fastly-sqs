@@ -21,7 +21,7 @@ object NewRelic {
     * stay below the 5MB NewRelic limit
     **********************************************/
   def postJson(entries: List[LogEntry]) = {
-    val json = entries.toSeq.asJ
+    val json = entries.asJ
     wsClient.url(insightUrl)
       .withHeaders(("X-Insert-Key", insightApiKey), ("Content-Type", "application/json"))
       .withRequestTimeout(2000)
