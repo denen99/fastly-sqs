@@ -3,10 +3,11 @@ package com.iheart.sqs
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
+
 import com.amazonaws.services.logs.AWSLogsClient
 import com.amazonaws.services.logs.model._
-import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model.{S3Object, GetObjectRequest}
+import com.amazonaws.services.s3.{AmazonS3Client, S3ResponseMetadata, s3ResponseMetadata}
+import com.amazonaws.services.s3.model.{GetObjectRequest, S3Object}
 import com.amazonaws.services.sqs.{AmazonSQSAsyncClient, AmazonSQSClient}
 import com.amazonaws.services.sqs.buffered.AmazonSQSBufferedAsyncClient
 import com.amazonaws.services.sqs.model._
@@ -15,6 +16,7 @@ import com.iheart.sqs.Utils._
 import org.apache.http.conn.ConnectionPoolTimeoutException
 import play.Logger
 import play.api.libs.json._
+
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
@@ -39,8 +41,12 @@ object AmazonHelpers {
   def readFileFromS3(bucket: String, key: String): Either[Throwable, List[String]] = {
     Logger.debug("About to read from bucket : " + bucket + " and key " + key)
     var source: Source = null
+    var meta: S3ResponseMetadata = null
+
     try {
-      val s3Object = s3Client.getObject(new GetObjectRequest(bucket, key))
+      val s3Req = new GetObjectRequest(bucket, key)
+      meta = s3Client.getCachedResponseMetadata(s3Req)
+      val s3Object = s3Client.getObject(s3Req)
       source = Source.fromInputStream(s3Object.getObjectContent)(scala.io.Codec.ISO8859)
       val lines = source.getLines().toList
       Right(lines)
@@ -49,7 +55,7 @@ object AmazonHelpers {
         Logger.error("Error retrieving from connection pool, possibly threadPool issue?")
         Left(e)
       case e: Throwable =>
-        Logger.error("Error retrieving from S3 : " + e.getMessage)
+        Logger.error("Error retrieving from S3 for Request ID " + meta.getRequestId + " : " +  e.getMessage)
         Left(e)
     } finally {
       if (source != null) source.close()
