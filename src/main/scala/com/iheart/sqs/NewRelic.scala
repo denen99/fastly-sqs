@@ -10,7 +10,7 @@ import scala.concurrent.duration.Duration
 
 object NewRelic {
 
-  implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+  implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(16))
   val wsClient = NingWSClient()
 
 
@@ -22,10 +22,15 @@ object NewRelic {
     **********************************************/
   def postJson(entries: List[LogEntry]) = {
     val json = entries.asJ
-    wsClient.url(insightUrl)
+    val resp = wsClient.url(insightUrl)
       .withHeaders(("X-Insert-Key", insightApiKey), ("Content-Type", "application/json"))
       .withRequestTimeout(2000)
-      .post(json)
+      .post(json).map { response =>
+        if (response.status != 200 ) {
+          Logger.error("Invalid Status Code " + response.status.toString)
+        }
+        else { Logger.debug("NR Status Code " + response.status.toString + " Body: " + response.body)}
+      }
   }
 
   def sendToNewRelicChunk(entries: List[LogEntry], splitCount: Int): Unit = entries.nonEmpty match {

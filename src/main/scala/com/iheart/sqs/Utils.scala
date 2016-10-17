@@ -34,7 +34,7 @@ object Utils  {
   val conf = ConfigFactory.load()
   val insightApiKey = conf.getString("newrelic.apikey")
   val insightUrl = conf.getString("newrelic.apiUrl")
-  val executorService = Executors.newFixedThreadPool(4)
+  val executorService = Executors.newFixedThreadPool(16)
   val executionContext = ExecutionContext.fromExecutorService(executorService)
 
   val default: LogConfig = conf.as[LogConfig]("regex.default")
