@@ -29,7 +29,6 @@ object NewRelic {
         if (response.status != 200 ) {
           Logger.error("Invalid Status Code " + response.status.toString)
         }
-        else { Logger.debug("NR Status Code " + response.status.toString + " Body: " + response.body)}
       }
   }
 
