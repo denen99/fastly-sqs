@@ -6,7 +6,7 @@ import java.util.Date
 
 import com.amazonaws.services.logs.AWSLogsClient
 import com.amazonaws.services.logs.model._
-import com.amazonaws.services.s3.{AmazonS3Client, S3ResponseMetadata, s3ResponseMetadata}
+import com.amazonaws.services.s3.{AmazonS3Client, S3ResponseMetadata}
 import com.amazonaws.services.s3.model.{GetObjectRequest, S3Object}
 import com.amazonaws.services.sqs.{AmazonSQSAsyncClient, AmazonSQSClient}
 import com.amazonaws.services.sqs.buffered.AmazonSQSBufferedAsyncClient

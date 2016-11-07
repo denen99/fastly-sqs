@@ -10,7 +10,7 @@ import scala.concurrent.duration.Duration
 
 object NewRelic {
 
-  implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+  implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(16))
   val wsClient = NingWSClient()
 
 
@@ -25,12 +25,15 @@ object NewRelic {
     wsClient.url(insightUrl)
       .withHeaders(("X-Insert-Key", insightApiKey), ("Content-Type", "application/json"))
       .withRequestTimeout(2000)
-      .post(json)
+      .post(json).map { response =>
+        if (response.status != 200 ) {
+          Logger.error("Invalid Status Code " + response.status.toString)
+        }
+      }
   }
 
   def sendToNewRelicChunk(entries: List[LogEntry], splitCount: Int): Unit = entries.nonEmpty match {
     case true =>
-      Logger.debug("Sending chunk to NewRelic")
       postJson(entries.take(splitCount))
       sendToNewRelicChunk(entries.drop(splitCount), splitCount)
     case _ =>
@@ -42,8 +45,10 @@ object NewRelic {
       case true =>
         Logger.debug("Skipping NewRelic, no valid entries")
       case _ =>
+        val head = entries.head
+        DBUtils.storeHostname(head.fields("hostname").asInstanceOf[String],head.fields("timestamp").asInstanceOf[Long])
+        Logger.debug("Sending Chunks to NewRelic")
         sendToNewRelicChunk(entries, splitCount)
-        Logger.debug("Closing S3 handle")
     }
 
   }

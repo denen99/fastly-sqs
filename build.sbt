@@ -11,7 +11,7 @@ def awsSdkModule(id: String) = "com.amazonaws" % s"aws-java-sdk-$id" % awsVersio
 lazy val root = (project in file(".")).
   settings(
     name := "fastly-sqs",
-    version := "2.0.1",
+    version := "2.0.3",
     scalaVersion := "2.11.7",
     retrieveManaged := true,
     libraryDependencies ++= Seq(
@@ -22,7 +22,8 @@ lazy val root = (project in file(".")).
       "com.typesafe.play" %% "play-ws" % "2.4.4",
       "com.typesafe" % "config" % "1.3.0",
       "org.specs2" %% "specs2-core" % "3.7" % "test",
-      "com.iheart" %% "ficus" % "1.2.3"
+      "com.iheart" %% "ficus" % "1.2.3",
+      "org.mapdb" % "mapdb" % "3.0.2"
     ) ++ Seq("s3", "logs", "sqs").map(awsSdkModule)
   )
 
