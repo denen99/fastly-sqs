@@ -22,7 +22,7 @@ object NewRelic {
     **********************************************/
   def postJson(entries: List[LogEntry]) = {
     val json = entries.asJ
-    val resp = wsClient.url(insightUrl)
+    wsClient.url(insightUrl)
       .withHeaders(("X-Insert-Key", insightApiKey), ("Content-Type", "application/json"))
       .withRequestTimeout(2000)
       .post(json).map { response =>
