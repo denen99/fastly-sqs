@@ -34,7 +34,6 @@ object NewRelic {
 
   def sendToNewRelicChunk(entries: List[LogEntry], splitCount: Int): Unit = entries.nonEmpty match {
     case true =>
-      Logger.debug("Sending chunk to NewRelic")
       postJson(entries.take(splitCount))
       sendToNewRelicChunk(entries.drop(splitCount), splitCount)
     case _ =>
@@ -46,8 +45,10 @@ object NewRelic {
       case true =>
         Logger.debug("Skipping NewRelic, no valid entries")
       case _ =>
+        val head = entries.head
+        DBUtils.storeHostname(head.fields("hostname").asInstanceOf[String],head.fields("timestamp").asInstanceOf[Long])
+        Logger.debug("Sending Chunks to NewRelic")
         sendToNewRelicChunk(entries, splitCount)
-        Logger.debug("Closing S3 handle")
     }
 
   }
