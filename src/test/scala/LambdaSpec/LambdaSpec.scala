@@ -33,19 +33,19 @@ class LambdaSpec extends Specification {
     }
 
     "correctly parse a valid log entry with multiple shield entries" in {
-      val record ="<134>2016-02-22T00:00:09Z cache-ord1732 AmazonS3[351]: 205.160.165.83 Mon, 22 Feb 2016 00:00:08 GMT GET /api/v2/query/ipad.sliderwide radioedit.iheart.com 200 MISS, MISS, HIT (null) 25000"
+      val record ="<134>2016-02-22T00:00:09Z cache-ord1732 AmazonS3[351]: 205.160.165.83 Mon, 22 Feb 2016 00:00:08 GMT GET /path/hello.txt radioedit.example.com 200 MISS, MISS, HIT (null) 25000"
       val host = "random.example.com"
 
       val result = parseRecord(record,host)
       result mustNotEqual None
-      result.get.fields("hostname") mustEqual "radioedit.iheart.com"
+      result.get.fields("hostname") mustEqual "radioedit.example.com"
       result.get.fields("hitMissShield") mustEqual "MISS"
       result.get.fields("hitMissEdge") mustEqual "MISS"
       result.get.fields("httpMethod") mustEqual "GET"
       result.get.fields("eventType") mustEqual "FastlyDebug"
       result.get.fields("ip") mustEqual "205.160.165.83"
       result.get.fields("statusCode") mustEqual "200"
-      result.get.fields("uri") mustEqual "/api/v2/query/ipad.sliderwide"
+      result.get.fields("uri") mustEqual "/path/hello.txt"
       result.get.fields("timestamp") mustEqual 1456099208
       result.get.fields("fastlyHost") mustEqual "cache-ord1732"
       result.get.fields("referrer") mustEqual "(null)"
@@ -111,23 +111,32 @@ class LambdaSpec extends Specification {
     }
 
     "correctly parse a valid log entry with multiple shield entries using a specific host config " in {
-      val record ="<134>2016-02-22T00:00:09Z cache-ord1732 AmazonS3[351]: 205.160.165.83 Mon, 22 Feb 2016 00:00:08 GMT GET /api/v2/query/ipad.sliderwide radioedit.iheart.com 200 MISS, MISS, HIT (null) 25000"
+      val record ="<134>2016-02-22T00:00:09Z cache-ord1732 AmazonS3[351]: 205.160.165.83 Mon, 22 Feb 2016 00:00:08 GMT GET /path/hello.txt radioedit.example.com 200 MISS, MISS, HIT (null) 25000"
       val host = "test.example.com"
 
       val result = parseRecord(record,host)
       result mustNotEqual None
-      result.get.fields("hostname") mustEqual "radioedit.iheart.com"
+      result.get.fields("hostname") mustEqual "radioedit.example.com"
       result.get.fields("hitMissShield") mustEqual "MISS"
       result.get.fields("hitMissEdge") mustEqual "MISS"
       result.get.fields("httpMethod") mustEqual "GET"
       result.get.fields("eventType") mustEqual "FastlyDebug"
       result.get.fields("ip") mustEqual "205.160.165.83"
       result.get.fields("statusCode") mustEqual "200"
-      result.get.fields("uri") mustEqual "/api/v2/query/ipad.sliderwide"
+      result.get.fields("uri") mustEqual "/path/hello.txt"
       result.get.fields("timestamp") mustEqual 1456099208
       result.get.fields("fastlyHost") mustEqual "cache-ord1732"
       result.get.fields("referrer") mustEqual "(null)"
       result.get.fields("tcpClientRTT") mustEqual 25000
+    }
+
+    "correctly parse a user agent field " in {
+      val record = "<134>2016-11-08T20:33:21Z cache-atl6227 AmazonS3[204817]: 98.242.211.194 Tue, 08 Nov 2016 20:33:21 GMT GET /path/hello.txt uatest.example.com 200 HIT http://uatext.example.com/ \"Mozilla/5.0 (Linux; Android 5.1.1; SM-T900 Build/LMY47X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.68 Safari/537.36\""
+      val host = "uatest.example.com"
+      val result = parseRecord(record,host)
+
+      result mustNotEqual None
+      result.get.fields("userAgent") mustEqual "Android Chrome"
     }
 
   }

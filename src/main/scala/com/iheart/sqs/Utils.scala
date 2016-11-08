@@ -12,7 +12,6 @@ import play.Logger
 import scala.concurrent.ExecutionContext
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.uaparser
 import org.uaparser.scala.CachingParser
 
 case class LogEntry(fields: Map[String,Any])
