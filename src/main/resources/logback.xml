@@ -15,5 +15,5 @@
     <logger name="httpclient.wire" level="WARN" />
     <logger name="com.amazonaws" level="WARN"/>
     <logger name="com.ning.http" level="WARN"/>
-    <logger name="application" level="DEBUG"/>
+    <logger name="application" level="INFO"/>
 </configuration>

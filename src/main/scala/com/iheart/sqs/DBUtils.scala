@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.mapdb.{DBMaker, Serializer}
+import org.uaparser.scala.CachingParser
 import play.Logger
 
 import scala.collection.JavaConverters._
@@ -26,13 +27,13 @@ object DBUtils {
     Logger.debug("Starting timer")
     Future {
       while(true) {
-        Logger.debug("****************************")
+        Logger.info("****************************")
         dbHash.getKeys.asScala.foreach{ key =>
           val date = new Date(dbHash.get(key) * 1000)
-          Logger.debug(key + " -> " + date.toString)
+          Logger.info(key + " -> " + date.toString)
         }
-        Logger.debug("****************************")
-        Thread.sleep(10000)
+        Logger.info("****************************")
+        Thread.sleep(30000)
       }
     }
   }
