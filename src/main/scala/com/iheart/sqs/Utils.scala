@@ -3,13 +3,16 @@ package com.iheart.sqs
 import java.text.SimpleDateFormat
 import java.util.concurrent.Executors
 import java.util.regex.{Matcher, Pattern}
-import org.json4s.{FieldSerializer, DefaultFormats}
+
+import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.native.Serialization.write
 import com.typesafe.config._
 import play.Logger
+
 import scala.concurrent.ExecutionContext
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.uaparser.scala.CachingParser
 
 case class LogEntry(fields: Map[String,Any])
 
@@ -41,6 +44,7 @@ object Utils  {
   val defaultPattern = Pattern.compile(default.pattern)
   val confMap: ConfMap = buildConfMap()
   val patternMap: Map[String, Pattern] = buildPatternMap().withDefaultValue(defaultPattern)
+  val uaParser = CachingParser.get(100000)
 
   def buildConfMap(): ConfMap =
     conf.as[ConfMap]("regex.hosts").withDefaultValue(default)
@@ -94,13 +98,20 @@ object Utils  {
   /******************************************
     * Date format helper to convert date in log
     * to EPOCH format
-    **********************************************/
+  **********************************************/
   def parseDate(date: String, host: String): Long = {
     val fmt = new SimpleDateFormat(confMap(host).dateformat)
     val res = fmt.parse(date)
     res.getTime / 1000
   }
 
+  /*************************************************
+    * Convert parsed UserAgent into a string we can use
+  ******************************************************/
+  def parseUserAgent(ua: String) = {
+     val client = uaParser.parse(ua)
+     client.os.family + ' ' + client.userAgent.family
+  }
 
   /*****************************************************************
     * 2 keys in the map are special, hostname and timestamp.  NewRelic
@@ -108,18 +119,19 @@ object Utils  {
     * hostname field is used to map to a custom eventType field. The
     * eventType field is how NewRelic stores different events inside
     * of Insights.
-    ********************************************************************/
+  ********************************************************************/
   def formatValue(key: String, value: Any, host: String): Map[String,Any] = key match {
     case "timestamp" => Map(key -> parseDate(value.asInstanceOf[String],host))
     case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
     case "tcpClientRTT" => Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
+    case "userAgent" => Map(key -> parseUserAgent(value.asInstanceOf[String]))
     case _ => Map(key -> value)
   }
 
   /*****************************************************
     * NewRelic requires a field called eventType ,
     * so we ensure its there
-    ******************************************************/
+  ******************************************************/
   def ensureEventType(m: Map[String,Any]) = m.get("eventType") match {
     case None => Map("eventType" -> conf.getString("event-types.default"))
     case _ => Map()
@@ -128,7 +140,7 @@ object Utils  {
   /**************************************************
     * compiles Regex against log entry to build a
     * a map used to create a LogEntry class
-    **************************************************/
+  **************************************************/
 
   def buildMap(matcher: Matcher,count: Int, host: String, m: Map[String,Any] = Map()): Map[String,Any] = count match {
     case 0 => m ++ ensureEventType(m)
@@ -142,7 +154,7 @@ object Utils  {
   }
 
   /**********************************************************
-    * This is the method that gets passes an entry from
+    * This is the method that gets passed an entry from
     * the logfile, parses it and returns an Option[LogEntry]
     ************************************************************/
   def parseRecord(line: String, host: String): Option[LogEntry] = {
