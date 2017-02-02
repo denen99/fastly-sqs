@@ -125,6 +125,7 @@ object Utils  {
     case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
     case "tcpClientRTT" => Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
     case "userAgent" => Map(key -> parseUserAgent(value.asInstanceOf[String]))
+    case "ttfb" =>   Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
     case _ => Map(key -> value)
   }
 
