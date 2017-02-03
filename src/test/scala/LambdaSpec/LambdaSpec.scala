@@ -139,5 +139,15 @@ class LambdaSpec extends Specification {
       result.get.fields("userAgent") mustEqual "Android Chrome"
     }
 
+    "correctly parse ttfb field" in {
+      //val record = "<134>2017-01-04T16:22:08Z cache-iad2121 AmazonS3[107720]: 12.163.249.254 \"-\" \"-\" Wed, 04 Jan 2017 16:22:08 GMT GET /rhapsodyev/v3/1B1H7H1J9E6E9A2C/s/0/1/7/8/0/1265808710.m4a-16.aac?e=1483550948&h=f3ee17b011b48742661f5d5d2697dcfc 200 HIT 5"
+      val record = "<134>2017-01-04T16:59:01Z cache-iad2147 AmazonS3[239832]: 65.18.224.114 Wed, 04 Jan 2017 16:59:00 GMT GET /rhapsodyev/v1/1B1H7H1J9E6E9A2C/s/3/5/4/2/3/1023832453.m4a-1.aac?e=1483553579&h=e874e3bc446337372fd656dea4437a87 stg-otfp.iheart.com 200 MISS 5"
+      val host = "ttfbtest.example.com"
+      val result = parseRecord(record,host)
+
+      result mustNotEqual None
+      result.get.fields("ttfb") mustEqual 5
+    }
+
   }
 }

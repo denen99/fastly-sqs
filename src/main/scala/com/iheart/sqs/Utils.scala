@@ -3,7 +3,7 @@ package com.iheart.sqs
 import java.text.SimpleDateFormat
 import java.util.concurrent.Executors
 import java.util.regex.{Matcher, Pattern}
-
+import scala.collection.JavaConverters._
 import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.native.Serialization.write
 import com.typesafe.config._
@@ -37,6 +37,7 @@ object Utils  {
   val conf = ConfigFactory.load()
   val insightApiKey = conf.getString("newrelic.apikey")
   val insightUrl = conf.getString("newrelic.apiUrl")
+  val integerFields: Seq[String] = conf.getStringList("regex.integerFields").asScala.toSeq
   val executorService = Executors.newFixedThreadPool(16)
   val executionContext = ExecutionContext.fromExecutorService(executorService)
 
@@ -123,8 +124,8 @@ object Utils  {
   def formatValue(key: String, value: Any, host: String): Map[String,Any] = key match {
     case "timestamp" => Map(key -> parseDate(value.asInstanceOf[String],host))
     case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
-    case "tcpClientRTT" => Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
     case "userAgent" => Map(key -> parseUserAgent(value.asInstanceOf[String]))
+    case _ if integerFields.contains(key) => Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
     case _ => Map(key -> value)
   }
 
