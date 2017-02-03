@@ -124,9 +124,7 @@ object Utils  {
   def formatValue(key: String, value: Any, host: String): Map[String,Any] = key match {
     case "timestamp" => Map(key -> parseDate(value.asInstanceOf[String],host))
     case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
-    //case "tcpClientRTT" => Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
     case "userAgent" => Map(key -> parseUserAgent(value.asInstanceOf[String]))
-    //case "ttfb" =>   Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
     case _ if integerFields.contains(key) => Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
     case _ => Map(key -> value)
   }
