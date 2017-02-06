@@ -149,5 +149,15 @@ class LambdaSpec extends Specification {
       result.get.fields("ttfb") mustEqual 5
     }
 
+    "correctly parse record with unmatched fields appended " in {
+      val record = "<134>2016-11-08T20:33:21Z cache-atl6227 AmazonS3[204817]: 98.242.211.194 Tue, 08 Nov 2016 20:33:21 GMT GET /path/hello.txt uatest.example.com 200 HIT http://uatext.example.com/ \"Mozilla/5.0 (Linux; Android 5.1.1; SM-T900 Build/LMY47X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.68 Safari/537.36\" 5 4 3 2 1 \"not a user-agent string\""
+      val host = "uatest.example.com"
+      val result = parseRecord(record,host)
+
+      result mustNotEqual None
+      result.get.fields("httpMethod") mustEqual "GET"
+      result.get.fields("userAgent") mustEqual "Android Chrome"
+    }
+
   }
 }
