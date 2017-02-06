@@ -32,4 +32,4 @@ target
 # jenv
 .java-version
 
-src/main/resources/*.conf
+src/main/resources/application.conf
