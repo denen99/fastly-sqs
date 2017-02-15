@@ -38,6 +38,7 @@ object Utils  {
   val insightApiKey = conf.getString("newrelic.apikey")
   val insightUrl = conf.getString("newrelic.apiUrl")
   val integerFields: Seq[String] = conf.getStringList("regex.integerFields").asScala.toSeq
+  val floatFields: Seq[String] = conf.getStringList("regex.floatFields").asScala.toSeq
   val executorService = Executors.newFixedThreadPool(16)
   val executionContext = ExecutionContext.fromExecutorService(executorService)
 
@@ -125,7 +126,8 @@ object Utils  {
     case "timestamp" => Map(key -> parseDate(value.asInstanceOf[String],host))
     case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
     case "userAgent" => Map(key -> parseUserAgent(value.asInstanceOf[String]))
-    case _ if integerFields.contains(key) => Map(key -> Integer.parseInt(value.asInstanceOf[String]) )
+    case _ if integerFields.contains(key) => Map(key -> value.asInstanceOf[String].toInt )
+    case _ if floatFields.contains(key) => Map(key -> value.asInstanceOf[String].toFloat)
     case _ => Map(key -> value)
   }
 
