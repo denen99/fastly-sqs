@@ -4,6 +4,13 @@ ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 
 resolvers += Resolver.jcenterRepo
 
+addCommandAlias("validate", Seq(
+  "clean",
+  "coverage",
+  "test",
+  "coverageReport"
+).mkString(";", ";", ""))
+
 val awsVersion = "1.10.50"
 
 def awsSdkModule(id: String) = "com.amazonaws" % s"aws-java-sdk-$id" % awsVersion
