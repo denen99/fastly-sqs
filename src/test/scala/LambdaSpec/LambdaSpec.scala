@@ -170,5 +170,30 @@ class LambdaSpec extends Specification {
       result.get.fields("floatField1") mustEqual 24.50
     }
 
+    "correctly parse a service id" in {
+      val record = "<134>2017-05-19T19:21:30Z cache-iad2126 AmazonS3[271147]: 97.76.225.186 Fri, 19 May 2017 19:21:30 GMT GET /api/amp?path=live-meta%2Fstream%2F693%2FtrackHistory&version=v3 somedomain.example.com 200 HIT http://somedomain.example.com/ 5vzAa1WxRiqWNUHUtnRs4m"
+      val host = "fire.example.com"
+      val result = parseRecord(record,host)
+
+      result mustNotEqual None
+      result.get.fields("serviceId") mustEqual "5vzAa1WxRiqWNUHUtnRs4m"
+
+    }
+
+    "correctly parse a line parsed with vertical bars " in {
+      val record = "<134>2017-07-06T18:28:02Z cache-iad2124 S3Logging[457152]: ||Thu, 06 Jul 2017 18:28:02 GMT||HTTP/1.1||GET||404||fire.ihrint.com||/||||8927||113013||222.186.190.122||MISS-CLUSTER||Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)||http://151.101.194.101:80||text/html; charset=utf-8||"
+      val host = "fire2.example.com"
+      val result = parseRecord(record,host)
+
+      result mustNotEqual None
+      Logger.info("JSON : " + Seq(result.get).asJ)
+
+      result.get.fields("timestamp") mustEqual 1499365682
+      result.get.fields("contentType") mustEqual  "text/html; charset=utf-8"
+      result.get.fields("respBytes") mustEqual 8927
+      result.get.fields("requestTimeMicro") mustEqual 113013
+      result.get.fields("eventType") mustEqual "Fire2"
+    }
+
   }
 }

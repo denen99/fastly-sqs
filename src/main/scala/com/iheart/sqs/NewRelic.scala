@@ -27,7 +27,7 @@ object NewRelic {
       .withRequestTimeout(2000)
       .post(json).map { response =>
         if (response.status != 200 ) {
-          Logger.error("Invalid Status Code " + response.status.toString)
+          Logger.error("Invalid Status Code " + response.status.toString + " Error: " + response.body)
         }
       }
   }
@@ -46,7 +46,6 @@ object NewRelic {
         Logger.debug("Skipping NewRelic, no valid entries")
       case _ =>
         val head = entries.head
-        DBUtils.storeHostname(head.fields("hostname").asInstanceOf[String],head.fields("timestamp").asInstanceOf[Long])
         Logger.debug("Sending Chunks to NewRelic")
         sendToNewRelicChunk(entries, splitCount)
     }

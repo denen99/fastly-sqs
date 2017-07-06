@@ -11,7 +11,7 @@ def awsSdkModule(id: String) = "com.amazonaws" % s"aws-java-sdk-$id" % awsVersio
 lazy val root = (project in file(".")).
   settings(
     name := "fastly-sqs",
-    version := "2.1.3",
+    version := "2.1.5",
     scalaVersion := "2.11.7",
     retrieveManaged := true,
     libraryDependencies ++= Seq(
