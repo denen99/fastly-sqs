@@ -2,6 +2,7 @@ package com.iheart.sqs
 
 
 import java.text.SimpleDateFormat
+import java.time.{LocalDateTime, ZoneId}
 import java.util.Date
 
 import org.mapdb.{DBMaker, Serializer}
@@ -18,9 +19,12 @@ object DBUtils {
   val format = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
   val dbFile = DBMaker.memoryDB().make()
   val dbHash = dbFile.hashMap("msgMap").keySerializer(Serializer.STRING).valueSerializer(Serializer.LONG).createOrOpen()
+  val zoneId = ZoneId.of("America/New_York")
 
-  def storeHostname(hostname: String, timestamp: Long) = {
-    dbHash.put(hostname,timestamp)
+
+  def storeHostname(hostname: String) = {
+    val now = LocalDateTime.now().atZone(zoneId).toEpochSecond
+    dbHash.put(hostname,now)
   }
 
   def startTimer() = {

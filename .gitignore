@@ -33,3 +33,4 @@ target
 .java-version
 
 src/main/resources/application.conf
+src/main/resources/application.prod.conf

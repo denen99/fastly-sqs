@@ -3,6 +3,7 @@ package com.iheart.sqs
 import java.text.SimpleDateFormat
 import java.util.concurrent.Executors
 import java.util.regex.{Matcher, Pattern}
+
 import scala.collection.JavaConverters._
 import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.native.Serialization.write
@@ -48,6 +49,12 @@ object Utils  {
   val patternMap: Map[String, Pattern] = buildPatternMap().withDefaultValue(defaultPattern)
   val uaParser = CachingParser.get(100000)
 
+  val eventTypes = buildEventTypes()
+
+
+  def buildEventTypes() = {
+     conf.getObject("event-types")
+  }
   def buildConfMap(): ConfMap =
     conf.as[ConfMap]("regex.hosts").withDefaultValue(default)
 
@@ -85,7 +92,9 @@ object Utils  {
   def parseLogFile(bucket: String, key: String): List[LogEntry] = {
     try {
       readFileFromS3(bucket,key) match {
-        case Right(lines) => lines.flatMap(line => parseRecord(line,getHostFromKey(key)))
+        case Right(lines) =>
+          DBUtils.storeHostname(getHostFromKey(key))
+          lines.flatMap(line => parseRecord(line,getHostFromKey(key)))
         case Left(y) => Nil
       }
     } catch {
@@ -124,7 +133,7 @@ object Utils  {
   ********************************************************************/
   def formatValue(key: String, value: Any, host: String): Map[String,Any] = key match {
     case "timestamp" => Map(key -> parseDate(value.asInstanceOf[String],host))
-    case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
+    //case "hostname" => Map(key -> value, "eventType" -> getEventType(key))
     case "userAgent" => Map(key -> parseUserAgent(value.asInstanceOf[String]))
     case _ if integerFields.contains(key) => Map(key -> value.asInstanceOf[String].toInt )
     case _ if floatFields.contains(key) => Map(key -> value.asInstanceOf[String].toFloat)
@@ -135,8 +144,8 @@ object Utils  {
     * NewRelic requires a field called eventType ,
     * so we ensure its there
   ******************************************************/
-  def ensureEventType(m: Map[String,Any]) = m.get("eventType") match {
-    case None => Map("eventType" -> conf.getString("event-types.default"))
+  def ensureEventType(hostname: String, m: Map[String,Any]) = m.get("eventType") match {
+    case None => Map("eventType" -> getEventType(hostname))
     case _ => Map()
   }
 
@@ -146,7 +155,7 @@ object Utils  {
   **************************************************/
 
   def buildMap(matcher: Matcher,count: Int, host: String, m: Map[String,Any] = Map()): Map[String,Any] = count match {
-    case 0 => m ++ ensureEventType(m)
+    case 0 => m ++ ensureEventType(host,m)
     case _ => val key = confMap(host).captures.get(count.toString)
       key match {
         case Some(x) =>
@@ -169,8 +178,8 @@ object Utils  {
       Some(LogEntry(buildMap(matcher, matcher.groupCount(),host)))
     }
     else {
-      Logger.debug("No match for line " + line)
-      sendCloudWatchLog(line)
+      //Logger.debug("No match for line " + line)
+      //sendCloudWatchLog(line)
       None
     }
 
