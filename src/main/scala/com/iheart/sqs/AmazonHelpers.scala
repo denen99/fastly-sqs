@@ -28,7 +28,7 @@ object AmazonHelpers {
 
   val s3Client = new AmazonS3Client()
   val cwlClient = new AWSLogsClient()
-  val sqsAsync = new AmazonSQSAsyncClient();
+  val sqsAsync = new AmazonSQSAsyncClient()
   val sqsclient = new AmazonSQSBufferedAsyncClient(sqsAsync)
   val cwlLogGroup = conf.getString("sqs.logGroup")
   val sqsQueueUrl = conf.getString("sqs.url")
@@ -123,6 +123,7 @@ object AmazonHelpers {
             val key = URLDecoder.decode(record._2, "UTF-8")
             Logger.debug("Sending bucket : " + bucket + " and key:" + key + ":")
             Future {
+              DBUtils.incrS3Counter
               sendToNewRelic(parseLogFile(bucket, key))
             }
           }
