@@ -1,16 +1,12 @@
 package com.iheart.sqs
 
-import java.util.concurrent.Executors
-
 import com.iheart.sqs.Utils._
 import play.Logger
 import play.api.libs.ws.ning.NingWSClient
-import scala.concurrent.{ExecutionContext, Future, Await}
-import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object NewRelic {
 
-  implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(16))
   val wsClient = NingWSClient()
 
 

@@ -6,12 +6,11 @@ import java.time.{LocalDateTime, ZoneId}
 import java.util.Date
 
 import org.mapdb.{DBMaker, Serializer}
-import org.uaparser.scala.CachingParser
 import play.Logger
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent._
 
 
 object DBUtils {
@@ -30,14 +29,18 @@ object DBUtils {
   def startTimer() = {
     Logger.debug("Starting timer")
     Future {
-      while(true) {
-        Logger.info("****************************")
-        dbHash.getKeys.asScala.foreach{ key =>
-          val date = new Date(dbHash.get(key) * 1000)
-          Logger.info(key + " -> " + date.toString)
+      blocking {
+        while (true) {
+          val count = Thread.activeCount()
+          Logger.info("****************************")
+          Logger.info("# Running Threads: " + count)
+          dbHash.getKeys.asScala.foreach { key =>
+            val date = new Date(dbHash.get(key) * 1000)
+            Logger.info(key + " -> " + date.toString)
+          }
+          Logger.info("****************************")
+          Thread.sleep(30000)
         }
-        Logger.info("****************************")
-        Thread.sleep(30000)
       }
     }
   }
