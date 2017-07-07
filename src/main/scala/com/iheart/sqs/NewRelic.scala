@@ -41,10 +41,9 @@ object NewRelic {
       case true =>
         Logger.debug("Skipping NewRelic, no valid entries")
       case _ =>
-        val head = entries.head
         Logger.debug("Sending Chunks to NewRelic")
         sendToNewRelicChunk(entries, splitCount)
     }
-
+    DBUtils.decrS3Counter
   }
 }

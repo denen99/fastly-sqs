@@ -123,6 +123,7 @@ object AmazonHelpers {
             val key = URLDecoder.decode(record._2, "UTF-8")
             Logger.debug("Sending bucket : " + bucket + " and key:" + key + ":")
             Future {
+              DBUtils.incrS3Counter
               sendToNewRelic(parseLogFile(bucket, key))
             }
           }
