@@ -28,7 +28,7 @@ object AmazonHelpers {
 
   val s3Client = new AmazonS3Client()
   val cwlClient = new AWSLogsClient()
-  val sqsAsync = new AmazonSQSAsyncClient();
+  val sqsAsync = new AmazonSQSAsyncClient()
   val sqsclient = new AmazonSQSBufferedAsyncClient(sqsAsync)
   val cwlLogGroup = conf.getString("sqs.logGroup")
   val sqsQueueUrl = conf.getString("sqs.url")
