@@ -18,7 +18,8 @@ import play.Logger
 import play.api.libs.json._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 import scala.util.Random
 
@@ -31,7 +32,6 @@ object AmazonHelpers {
   val sqsclient = new AmazonSQSBufferedAsyncClient(sqsAsync)
   val cwlLogGroup = conf.getString("sqs.logGroup")
   val sqsQueueUrl = conf.getString("sqs.url")
-  implicit val ec = executionContext
 
   def cwlLogStream() = {
     val s = new SimpleDateFormat("YYYY-MMDD-HH-mm")
@@ -109,7 +109,7 @@ object AmazonHelpers {
     sqsclient.deleteMessageBatchAsync(delBatchRequest)
   }
 
-  def getSqsMessages(implicit ec: ExecutionContext = executionContext) = {
+  def getSqsMessages = {
     while (true) {
       try {
         val request = new ReceiveMessageRequest(sqsQueueUrl).withVisibilityTimeout(30).withMaxNumberOfMessages(10).withWaitTimeSeconds(10)

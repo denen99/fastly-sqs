@@ -9,8 +9,7 @@ import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.native.Serialization.write
 import com.typesafe.config._
 import play.Logger
-
-import scala.concurrent.ExecutionContext
+import scala.concurrent._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.uaparser.scala.CachingParser
@@ -40,8 +39,8 @@ object Utils  {
   val insightUrl = conf.getString("newrelic.apiUrl")
   val integerFields: Seq[String] = conf.getStringList("regex.integerFields").asScala.toSeq
   val floatFields: Seq[String] = conf.getStringList("regex.floatFields").asScala.toSeq
-  val executorService = Executors.newFixedThreadPool(16)
-  val executionContext = ExecutionContext.fromExecutorService(executorService)
+//  val executorService = Executors.newFixedThreadPool(16)
+//  val executionContext = ExecutionContext.fromExecutorService(executorService)
 
   val default: LogConfig = conf.as[LogConfig]("regex.default")
   val defaultPattern = Pattern.compile(default.pattern)
@@ -91,11 +90,13 @@ object Utils  {
     **********************************************/
   def parseLogFile(bucket: String, key: String): List[LogEntry] = {
     try {
-      readFileFromS3(bucket,key) match {
-        case Right(lines) =>
-          DBUtils.storeHostname(getHostFromKey(key))
-          lines.flatMap(line => parseRecord(line,getHostFromKey(key)))
-        case Left(y) => Nil
+      blocking {
+        readFileFromS3(bucket, key) match {
+          case Right(lines) =>
+            DBUtils.storeHostname(getHostFromKey(key))
+            lines.flatMap(line => parseRecord(line, getHostFromKey(key)))
+          case Left(y) => Nil
+        }
       }
     } catch {
       case e: Throwable =>
