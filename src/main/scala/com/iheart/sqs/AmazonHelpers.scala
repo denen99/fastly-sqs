@@ -112,7 +112,7 @@ object AmazonHelpers {
   def getSqsMessages = {
     while (true) {
       try {
-        val request = new ReceiveMessageRequest(sqsQueueUrl).withVisibilityTimeout(30).withMaxNumberOfMessages(1).withWaitTimeSeconds(10)
+        val request = new ReceiveMessageRequest(sqsQueueUrl).withVisibilityTimeout(30).withMaxNumberOfMessages(10).withWaitTimeSeconds(10)
         val messages = sqsclient.receiveMessage(request).getMessages
         Logger.debug("Received " + messages.size() + " messages")
 
