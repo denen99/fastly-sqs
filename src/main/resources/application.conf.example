@@ -8,6 +8,12 @@ newrelic {
   apiUrl="https://insights-collector.newrelic.com/v1/accounts/ACCOUNT_ID/events"
 }
 
+datadog {
+  apiKey = "XXX"
+  appKey = "YYY"
+  url="https://app.datadoghq.com/api/v1/metrics"
+}
+
 sqs {
   url="https://sqs.us-east-1.amazonaws.com/YOUR_ACCOUNT/YOUR_QUEUE"
   logGroup="/aws/sqs/FastlyLogProcesserSkips"
