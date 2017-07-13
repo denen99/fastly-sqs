@@ -26,7 +26,7 @@ object NewRelic {
         if (response.status != 200 ) {
           Logger.error("Invalid Status Code " + response.status.toString + " Error: " + response.body)
         }
-      }.andThen { case _ => wsClient.close() }
+      }
   }
 
   def sendToNewRelicChunk(entries: List[LogEntry], splitCount: Int): Unit = entries.nonEmpty match {

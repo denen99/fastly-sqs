@@ -83,7 +83,7 @@ object DBUtils {
       if (response.status >= 400 ) {
         Logger.error("Invalid Status Code from DataDog: " + response.status.toString + " Error: " + response.body)
       }
-    }.andThen { case _ => wsClient.close() }
+    }
 
   }
 
@@ -101,7 +101,7 @@ object DBUtils {
           val m2 = DDEntry("fastlyinsights.newRelicCount",Seq((now,nrCount)),"guage",Seq(ddHostTag))
           val m3 = DDEntry("fastlyinsights.jvmThreadCount",Seq((now,threads)),"guage",Seq(ddHostTag))
 
-          submitToDD(Seq(m1,m2))
+          submitToDD(Seq(m1,m2,m3))
           Thread.sleep(10000)
         }
       }
