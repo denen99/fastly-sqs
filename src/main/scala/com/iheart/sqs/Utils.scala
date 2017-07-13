@@ -1,9 +1,7 @@
 package com.iheart.sqs
 
 import java.text.SimpleDateFormat
-import java.util.concurrent.Executors
 import java.util.regex.{Matcher, Pattern}
-
 import scala.collection.JavaConverters._
 import org.json4s.{DefaultFormats, FieldSerializer}
 import org.json4s.native.Serialization.write

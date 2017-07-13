@@ -134,6 +134,8 @@ object AmazonHelpers {
         case e: Exception => Logger.error("Error in SQS Poll, " + e.getMessage)
       }
 
-    }
-  }
+    } //end while
+
+  } //end getSqsMessages
+
 }

@@ -17,6 +17,7 @@ object NewRelic {
     * stay below the 5MB NewRelic limit
     **********************************************/
   def postJson(entries: List[LogEntry]) = {
+    DBUtils.incrNewRelicCounter(entries.size)
     val json = entries.asJ
     wsClient.url(insightUrl)
       .withHeaders(("X-Insert-Key", insightApiKey), ("Content-Type", "application/json"))
@@ -25,7 +26,7 @@ object NewRelic {
         if (response.status != 200 ) {
           Logger.error("Invalid Status Code " + response.status.toString + " Error: " + response.body)
         }
-      }
+      }.andThen { case _ => wsClient.close() }
   }
 
   def sendToNewRelicChunk(entries: List[LogEntry], splitCount: Int): Unit = entries.nonEmpty match {
@@ -44,6 +45,5 @@ object NewRelic {
         Logger.debug("Sending Chunks to NewRelic")
         sendToNewRelicChunk(entries, splitCount)
     }
-    DBUtils.decrS3Counter
   }
 }
